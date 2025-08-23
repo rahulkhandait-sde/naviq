@@ -18,7 +18,7 @@ const LoginPage = () => {
 
   // Redirect if already logged in
   if (user) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/scan" replace />;
   }
 
   const handleChange = (e) => {

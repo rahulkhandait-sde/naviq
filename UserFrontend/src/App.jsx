@@ -20,7 +20,7 @@ function App() {
       <AuthProvider>
         <div className="min-h-screen bg-gradient-primary">
           <Routes>
-            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route path="/" element={<Navigate to="/scan" replace />} />
             <Route path="/login" element={<LoginPage />} />
             <Route
               path="/scan"
@@ -62,7 +62,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="*" element={<Navigate to="/home" replace />} />
+            <Route path="*" element={<Navigate to="/scan" replace />} />
           </Routes>
           <Navbar />
         </div>
