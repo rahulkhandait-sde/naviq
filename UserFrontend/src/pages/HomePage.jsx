@@ -18,9 +18,34 @@ const HomePage = () => {
   const [showNavigation, setShowNavigation] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Utility function to get organization ID from localStorage
+  const getStoredOrganizationId = () => {
+    try {
+      const orgId = localStorage.getItem('organizationId');
+      const orgData = localStorage.getItem('organizationData');
+      
+      if (orgId) {
+        console.log('📋 Retrieved organization ID from localStorage:', orgId);
+        if (orgData) {
+          const parsedData = JSON.parse(orgData);
+          console.log('📋 Organization data from localStorage:', parsedData);
+        }
+      }
+      
+      return orgId;
+    } catch (error) {
+      console.error('Error retrieving organization ID from localStorage:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     // Check if we came from QR scan with location data
     console.log('HomePage location state:', location.state);
+    
+    // Always check for stored organization ID on page load
+    const storedOrgId = getStoredOrganizationId();
+    
     if (location.state?.scannedLocation) {
       console.log('QR scan data detected:', location.state.scannedLocation);
       
@@ -33,6 +58,11 @@ const HomePage = () => {
       setShowNavigation(location.state.showNavigation || false);
       // Simulate setting destination based on scanned QR
       setCurrentDestination([40.7130, -74.0058]);
+    }
+    
+    // Log stored organization ID if available
+    if (storedOrgId) {
+      console.log('🎯 ORGANIZATION ID from localStorage:', storedOrgId);
     }
   }, [location.state]);
 

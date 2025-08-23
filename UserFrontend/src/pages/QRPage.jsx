@@ -9,11 +9,48 @@ const QRPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Function to extract organization ID from QR data
-  const extractOrganizationId = (qrData) => {
+  const extractOrganizationId = async (qrData) => {
     try {
       console.log('Raw QR Data:', qrData);
       
-      // Try to parse as JSON first
+      // Check if it's a QR.me URL that needs to be fetched
+      if (qrData.includes('qr.me-qr.com') || qrData.includes('qr.me')) {
+        console.log('🌐 Detected QR.me URL, fetching content...');
+        try {
+          const response = await fetch(qrData);
+          const textContent = await response.text();
+          console.log('📄 Fetched QR content:', textContent);
+          
+          // Now parse the fetched content for organization ID
+          return await extractOrganizationId(textContent);
+        } catch (fetchError) {
+          console.error('❌ Failed to fetch QR URL content:', fetchError);
+          // Continue with original data parsing as fallback
+        }
+      }
+      
+      // Check for "Org: IISER1234" format first (your specific format)
+      if (qrData.includes('Org:') || qrData.includes('org:')) {
+        const orgMatch = qrData.match(/org:\s*([a-zA-Z0-9\-_]+)/i);
+        if (orgMatch) {
+          const orgId = orgMatch[1].trim();
+          console.log('🏢 Organization ID found in "Org: XXXX" format:', orgId);
+          
+          // Store in localStorage
+          localStorage.setItem('organizationId', orgId);
+          localStorage.setItem('organizationData', JSON.stringify({
+            id: orgId,
+            source: 'qr_scan',
+            timestamp: new Date().toISOString(),
+            rawData: qrData
+          }));
+          console.log('💾 Organization ID stored in localStorage:', orgId);
+          
+          return orgId;
+        }
+      }
+      
+      // Try to parse as JSON
       if (qrData.startsWith('{') || qrData.startsWith('[')) {
         const parsed = JSON.parse(qrData);
         console.log('Parsed QR JSON:', parsed);
@@ -28,6 +65,18 @@ const QRPage = () => {
         
         if (orgId) {
           console.log('🏢 Organization ID found in JSON:', orgId);
+          
+          // Store in localStorage
+          localStorage.setItem('organizationId', orgId);
+          localStorage.setItem('organizationData', JSON.stringify({
+            id: orgId,
+            source: 'qr_scan_json',
+            timestamp: new Date().toISOString(),
+            rawData: qrData,
+            parsedData: parsed
+          }));
+          console.log('💾 Organization ID stored in localStorage:', orgId);
+          
           return orgId;
         }
       }
@@ -58,6 +107,17 @@ const QRPage = () => {
         if (orgMatch) {
           const orgId = orgMatch[1];
           console.log('🏢 Organization ID found in custom format:', orgId);
+          
+          // Store in localStorage
+          localStorage.setItem('organizationId', orgId);
+          localStorage.setItem('organizationData', JSON.stringify({
+            id: orgId,
+            source: 'qr_scan_custom',
+            timestamp: new Date().toISOString(),
+            rawData: qrData
+          }));
+          console.log('💾 Organization ID stored in localStorage:', orgId);
+          
           return orgId;
         }
       }
@@ -71,6 +131,17 @@ const QRPage = () => {
         if (segment.toLowerCase().includes('org') && segments[i + 1]) {
           const orgId = segments[i + 1];
           console.log('🏢 Organization ID found in path segments:', orgId);
+          
+          // Store in localStorage
+          localStorage.setItem('organizationId', orgId);
+          localStorage.setItem('organizationData', JSON.stringify({
+            id: orgId,
+            source: 'qr_scan_path',
+            timestamp: new Date().toISOString(),
+            rawData: qrData
+          }));
+          console.log('💾 Organization ID stored in localStorage:', orgId);
+          
           return orgId;
         }
       }
@@ -84,14 +155,19 @@ const QRPage = () => {
     }
   };
 
-  const handleScanSuccess = (decodedText) => {
+  const handleScanSuccess = async (decodedText) => {
     console.log('QR scan successful:', decodedText);
     
     // Extract and log organization ID
-    const organizationId = extractOrganizationId(decodedText);
+    const organizationId = await extractOrganizationId(decodedText);
     if (organizationId) {
       console.log('🎯 ORGANIZATION ID EXTRACTED:', organizationId);
       console.log('🏢 Organization:', organizationId);
+      console.log('💾 Organization ID saved to localStorage');
+      
+      // Also log what's in localStorage for verification
+      console.log('📋 localStorage organizationId:', localStorage.getItem('organizationId'));
+      console.log('📋 localStorage organizationData:', JSON.parse(localStorage.getItem('organizationData') || '{}'));
     } else {
       console.log('⚠️ No organization ID found in QR code');
     }
