@@ -3,12 +3,12 @@ import { useLocation } from 'react-router-dom';
 import MapView from '../components/MapView';
 import AIBot from '../components/AIBot';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  HiMapPin, 
-  HiQrCode, 
-  HiClock, 
+import {
+  HiMapPin,
+  HiQrCode,
+  HiClock,
   HiArrowTopRightOnSquare,
-  HiMagnifyingGlass 
+  HiMagnifyingGlass
 } from 'react-icons/hi2';
 
 const HomePage = () => {
@@ -19,22 +19,54 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Utility function to get organization ID from localStorage
-  const getStoredOrganizationId = () => {
+  const getStoredOrganizationId = async () => {
+    const userId = 'user1234'; // Define the user ID
+    const userQuery = 'I want to go to pukur'; // Define the query
+
     try {
       const orgId = localStorage.getItem('organizationId');
       const orgData = localStorage.getItem('organizationData');
-      
-      if (orgId) {
-        console.log('📋 Retrieved organization ID from localStorage:', orgId);
-        if (orgData) {
-          const parsedData = JSON.parse(orgData);
-          console.log('📋 Organization data from localStorage:', parsedData);
-        }
+
+      if (!orgId) {
+        console.error('🚫 Organization ID not found in localStorage.');
+        return null;
       }
-      
+
+      try {
+        console.log('Sending API request...');
+        const response = await fetch(
+          `http://localhost:3000/api/bot/callbot/${orgId}/${userId}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userquery: userQuery }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ API call successful. Received data:', data);
+
+      } catch (apiError) {
+        console.error('❌ Error calling the API:', apiError);
+      }
+
+      // Log the stored data after the API call, for verification
+      console.log('📋 Retrieved organization ID from localStorage:', orgId);
+      if (orgData) {
+        const parsedData = JSON.parse(orgData);
+        console.log('📋 Organization data from localStorage:', parsedData);
+      }
+
       return orgId;
+
     } catch (error) {
-      console.error('Error retrieving organization ID from localStorage:', error);
+      console.error('An unexpected error occurred:', error);
       return null;
     }
   };
@@ -42,24 +74,24 @@ const HomePage = () => {
   useEffect(() => {
     // Check if we came from QR scan with location data
     console.log('HomePage location state:', location.state);
-    
+
     // Always check for stored organization ID on page load
     const storedOrgId = getStoredOrganizationId();
-    
+
     if (location.state?.scannedLocation) {
       console.log('QR scan data detected:', location.state.scannedLocation);
-      
+
       // Log organization ID if present
       if (location.state?.organizationId) {
         console.log('🏢 Organization ID received on HomePage:', location.state.organizationId);
         console.log('🎯 ORGANIZATION ID:', location.state.organizationId);
       }
-      
+
       setShowNavigation(location.state.showNavigation || false);
       // Simulate setting destination based on scanned QR
       setCurrentDestination([40.7130, -74.0058]);
     }
-    
+
     // Log stored organization ID if available
     if (storedOrgId) {
       console.log('🎯 ORGANIZATION ID from localStorage:', storedOrgId);
@@ -122,9 +154,9 @@ const HomePage = () => {
 
         {/* Search Bar */}
         <div className="relative mb-6">
-          							<HiMagnifyingGlass 
-								className="h-5 w-5 text-gray-300 absolute left-3 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none search-icon" 
-							/>
+          <HiMagnifyingGlass
+            className="h-5 w-5 text-gray-300 absolute left-3 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none search-icon"
+          />
           <input
             type="text"
             placeholder="Search for rooms, facilities..."
@@ -167,7 +199,7 @@ const HomePage = () => {
           )}
         </div>
 
-        <MapView 
+        <MapView
           destination={currentDestination}
           showNavigation={showNavigation}
         />
