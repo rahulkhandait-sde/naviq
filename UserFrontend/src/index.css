@@ -1,68 +1,237 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+@layer base {
+	* {
+		box-sizing: border-box;
+	}
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+	html {
+		height: 100%;
+		-webkit-text-size-adjust: 100%;
+	}
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
+	body {
+		margin: 0;
+		padding: 0;
+		min-height: 100vh;
+		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+			"Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+			"Helvetica Neue", sans-serif;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+		color: #f9fafb;
+		overflow-x: hidden;
+	}
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
+	#root {
+		min-height: 100vh;
+	}
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
+	/* Custom scrollbar */
+	::-webkit-scrollbar {
+		width: 6px;
+	}
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+	::-webkit-scrollbar-track {
+		background: rgba(15, 23, 42, 0.5);
+	}
+
+	::-webkit-scrollbar-thumb {
+		background: rgba(59, 130, 246, 0.6);
+		border-radius: 3px;
+	}
+
+	::-webkit-scrollbar-thumb:hover {
+		background: rgba(59, 130, 246, 0.8);
+	}
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+@layer components {
+	.container-app {
+		@apply min-h-screen bg-gradient-primary text-gray-50;
+	}
+
+	.card {
+		@apply bg-white/15 backdrop-blur-sm border border-white/30 rounded-xl p-4 shadow-lg;
+	}
+
+	.card-glass {
+		@apply bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-2xl;
+	}
+
+	.btn {
+		@apply px-6 py-3 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+	}
+
+	.btn-primary {
+		@apply bg-gradient-button text-white hover:shadow-lg hover:scale-105 active:scale-95;
+	}
+
+	.btn-secondary {
+		@apply bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20;
+	}
+
+	.btn-success {
+		@apply bg-gradient-accent text-white hover:shadow-lg hover:scale-105 active:scale-95;
+	}
+
+	.btn-ghost {
+		@apply bg-transparent border border-white/30 text-white hover:bg-white/10;
+	}
+
+	.input {
+		@apply w-full px-4 py-3 bg-white/15 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent;
+	}
+
+	.input::placeholder {
+		color: rgba(156, 163, 175, 0.7);
+	}
+
+	.floating-btn {
+		@apply fixed bottom-24 right-6 w-14 h-14 bg-gradient-button rounded-full shadow-2xl flex items-center justify-center text-white text-xl hover:scale-110 active:scale-95 transition-all duration-200;
+		z-index: 9999 !important;
+		position: fixed !important;
+	}
+
+	/* Ensure AI bot is always on top */
+	.ai-bot-container {
+		z-index: 9999 !important;
+		position: fixed !important;
+	}
+
+	.nav-item {
+		@apply flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200;
+	}
+
+	.nav-item.active {
+		@apply text-blue-400 bg-white/10;
+	}
+
+	.nav-item.inactive {
+		@apply text-gray-400 hover:text-gray-300;
+	}
+
+	.chat-bubble {
+		@apply max-w-xs rounded-2xl px-4 py-2 mb-2 break-words;
+	}
+
+	.chat-bubble.user {
+		@apply bg-gradient-button text-white ml-auto;
+	}
+
+	.chat-bubble.bot {
+		@apply bg-white/10 backdrop-blur-sm border border-white/20 text-gray-100;
+	}
+
+	.qr-scanner-container {
+		@apply relative w-full max-w-sm mx-auto;
+	}
+
+	/* HTML5 QR Scanner specific styles */
+	#qr-reader {
+		@apply w-full border border-white/20 rounded-xl overflow-hidden bg-slate-900;
+		min-height: 300px;
+		position: relative;
+	}
+
+	#qr-reader video {
+		@apply w-full h-auto rounded-xl;
+		max-height: 400px;
+		object-fit: cover;
+		display: block !important;
+		background: #0f172a;
+	}
+
+	#qr-reader canvas {
+		@apply hidden;
+	}
+
+	/* Hide HTML5 QR scanner default UI elements */
+	#qr-reader__dashboard {
+		display: none !important;
+	}
+
+	#qr-reader__camera_selection {
+		display: none !important;
+	}
+
+	#qr-reader__scan_region {
+		@apply border-2 border-blue-400 rounded-xl;
+	}
+
+	.qr-scanner-overlay {
+		@apply absolute inset-0 border-2 border-white/30 rounded-xl pointer-events-none;
+		z-index: 10;
+	}
+
+	.qr-scanner-corners {
+		@apply absolute w-6 h-6 border-blue-400;
+	}
+
+	.qr-scanner-corners.top-left {
+		@apply top-2 left-2 border-t-2 border-l-2;
+	}
+
+	.qr-scanner-corners.top-right {
+		@apply top-2 right-2 border-t-2 border-r-2;
+	}
+
+	.qr-scanner-corners.bottom-left {
+		@apply bottom-2 left-2 border-b-2 border-l-2;
+	}
+
+	.qr-scanner-corners.bottom-right {
+		@apply bottom-2 right-2 border-b-2 border-r-2;
+	}
+
+	.map-container {
+		@apply w-full h-full rounded-xl overflow-hidden border border-white/20;
+		position: relative;
+		z-index: 1;
+	}
+
+	/* Ensure Leaflet map doesn't interfere with floating elements */
+	.leaflet-container {
+		z-index: 1 !important;
+	}
+
+	.leaflet-control-container {
+		z-index: 10 !important;
+	}
+
+	.loading-spinner {
+		@apply animate-spin rounded-full h-8 w-8 border-b-2 border-white;
+	}
+
+	.pulse-dot {
+		@apply w-3 h-3 bg-blue-400 rounded-full animate-pulse;
+	}
+}
+
+@layer utilities {
+	.text-shadow {
+		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+	}
+
+	.backdrop-blur-strong {
+		backdrop-filter: blur(20px);
+	}
+
+	.gradient-text {
+		background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+
+	.safe-area-bottom {
+		padding-bottom: env(safe-area-inset-bottom);
+	}
+
+	.safe-area-top {
+		padding-top: env(safe-area-inset-top);
+	}
 }
