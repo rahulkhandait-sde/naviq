@@ -8,8 +8,94 @@ const QRPage = () => {
   const [scanResult, setScanResult] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Function to extract organization ID from QR data
+  const extractOrganizationId = (qrData) => {
+    try {
+      console.log('Raw QR Data:', qrData);
+      
+      // Try to parse as JSON first
+      if (qrData.startsWith('{') || qrData.startsWith('[')) {
+        const parsed = JSON.parse(qrData);
+        console.log('Parsed QR JSON:', parsed);
+        
+        // Look for common organization ID fields
+        const orgId = parsed.organizationId || 
+                     parsed.orgId || 
+                     parsed.organization_id || 
+                     parsed.org_id ||
+                     parsed.companyId ||
+                     parsed.company_id;
+        
+        if (orgId) {
+          console.log('🏢 Organization ID found in JSON:', orgId);
+          return orgId;
+        }
+      }
+      
+      // Try to parse as URL with query parameters
+      if (qrData.includes('?') || qrData.includes('&')) {
+        const url = new URL(qrData.startsWith('http') ? qrData : `https://example.com/${qrData}`);
+        const params = new URLSearchParams(url.search);
+        
+        console.log('URL Parameters:', Object.fromEntries(params.entries()));
+        
+        const orgId = params.get('organizationId') || 
+                     params.get('orgId') || 
+                     params.get('organization_id') || 
+                     params.get('org_id') ||
+                     params.get('companyId') ||
+                     params.get('company_id');
+        
+        if (orgId) {
+          console.log('🏢 Organization ID found in URL params:', orgId);
+          return orgId;
+        }
+      }
+      
+      // Try to parse custom format (e.g., "location://building-id/org-123/room-456")
+      if (qrData.includes('org-') || qrData.includes('organization-')) {
+        const orgMatch = qrData.match(/org(?:anization)?-([a-zA-Z0-9\-_]+)/i);
+        if (orgMatch) {
+          const orgId = orgMatch[1];
+          console.log('🏢 Organization ID found in custom format:', orgId);
+          return orgId;
+        }
+      }
+      
+      // Try to extract from path segments
+      const segments = qrData.split('/').filter(segment => segment.length > 0);
+      console.log('QR Data segments:', segments);
+      
+      for (let i = 0; i < segments.length; i++) {
+        const segment = segments[i];
+        if (segment.toLowerCase().includes('org') && segments[i + 1]) {
+          const orgId = segments[i + 1];
+          console.log('🏢 Organization ID found in path segments:', orgId);
+          return orgId;
+        }
+      }
+      
+      console.log('❌ No organization ID found in QR data');
+      return null;
+      
+    } catch (error) {
+      console.error('Error parsing QR data for organization ID:', error);
+      return null;
+    }
+  };
+
   const handleScanSuccess = (decodedText) => {
     console.log('QR scan successful:', decodedText);
+    
+    // Extract and log organization ID
+    const organizationId = extractOrganizationId(decodedText);
+    if (organizationId) {
+      console.log('🎯 ORGANIZATION ID EXTRACTED:', organizationId);
+      console.log('🏢 Organization:', organizationId);
+    } else {
+      console.log('⚠️ No organization ID found in QR code');
+    }
+    
     setScanResult(decodedText);
     setIsProcessing(true);
 
@@ -18,12 +104,14 @@ const QRPage = () => {
       setIsProcessing(false);
       console.log('Navigating to home with data:', {
         scannedLocation: decodedText,
+        organizationId: organizationId,
         showNavigation: true 
       });
-      // Navigate to home with the scanned location data
+      // Navigate to home with the scanned location data and organization ID
       navigate('/home', { 
         state: { 
           scannedLocation: decodedText,
+          organizationId: organizationId,
           showNavigation: true 
         } 
       });

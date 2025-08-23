@@ -23,6 +23,13 @@ const HomePage = () => {
     console.log('HomePage location state:', location.state);
     if (location.state?.scannedLocation) {
       console.log('QR scan data detected:', location.state.scannedLocation);
+      
+      // Log organization ID if present
+      if (location.state?.organizationId) {
+        console.log('🏢 Organization ID received on HomePage:', location.state.organizationId);
+        console.log('🎯 ORGANIZATION ID:', location.state.organizationId);
+      }
+      
       setShowNavigation(location.state.showNavigation || false);
       // Simulate setting destination based on scanned QR
       setCurrentDestination([40.7130, -74.0058]);
@@ -85,7 +92,9 @@ const HomePage = () => {
 
         {/* Search Bar */}
         <div className="relative mb-6">
-          <HiMagnifyingGlass className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          							<HiMagnifyingGlass 
+								className="h-5 w-5 text-gray-300 absolute left-3 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none search-icon" 
+							/>
           <input
             type="text"
             placeholder="Search for rooms, facilities..."
@@ -174,13 +183,22 @@ const HomePage = () => {
       {/* Status Bar */}
       {showNavigation && (
         <div className="fixed top-4 left-4 right-4 z-30">
-          <div className="card bg-green-500/20 border-green-500/30">
+          <div className="bg-gradient-to-r from-green-600/90 to-emerald-600/90 backdrop-blur-lg border border-green-400/30 rounded-2xl p-4 shadow-2xl">
             <div className="flex items-center space-x-3">
-              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-              <div>
-                <p className="font-medium text-green-400">Navigation Active</p>
-                <p className="text-sm text-gray-300">Follow the blue path on the map</p>
+              <div className="relative">
+                <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse shadow-lg"></div>
+                <div className="absolute inset-0 w-4 h-4 bg-green-400/50 rounded-full animate-ping"></div>
               </div>
+              <div className="flex-1">
+                <p className="font-semibold text-white text-sm">Navigation Active</p>
+                <p className="text-xs text-green-100/90">Follow the blue path on the map</p>
+              </div>
+              <button
+                onClick={() => setShowNavigation(false)}
+                className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-200"
+              >
+                <span className="text-white text-sm font-medium">×</span>
+              </button>
             </div>
           </div>
         </div>
