@@ -235,7 +235,7 @@ Respond with ONLY the number (1-${topCandidates.length}) of the best match. No e
 
   try {
     const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" })
+    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" })
     const response = await model.generateContent(prompt)
 
     const selectedIndex = Number.parseInt(response.response.text().trim()) - 1
@@ -534,7 +534,7 @@ Respond with ONLY one word: "source-only", "destination-only", or "source-destin
 
   try {
     const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" })
+    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" })
     const response = await model.generateContent(prompt)
 
     const result = response.response.text().trim().toLowerCase()
@@ -635,7 +635,7 @@ Respond with ONLY the number (1-${topCandidates.length}) of the best destination
 
   try {
     const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" })
+    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" })
     const response = await model.generateContent(prompt)
 
     const selectedIndex = Number.parseInt(response.response.text().trim()) - 1

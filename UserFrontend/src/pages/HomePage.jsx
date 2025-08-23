@@ -20,7 +20,7 @@ const HomePage = () => {
 
   // Utility function to get organization ID from localStorage
   const getStoredOrganizationId = async () => {
-    const userId = 'user1234'; // Define the user ID
+    const userId = user.$id; // Define the user ID
     const userQuery = 'I want to go to pukur'; // Define the query
 
     try {
