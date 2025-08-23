@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { HiPaperAirplane, HiMicrophone, HiSpeakerWave } from 'react-icons/hi2';
 
 const ChatBox = ({ isOpen, onClose }) => {
@@ -13,9 +13,87 @@ const ChatBox = ({ isOpen, onClose }) => {
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [isConnected, setIsConnected] = useState(true);
+  const [isConnected] = useState(true); // Remove setIsConnected since it's not used
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true); // Voice enabled by default
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
+
+  // Configure female voice settings
+  const getFemalVoice = useCallback(() => {
+    const voices = window.speechSynthesis.getVoices();
+    
+    // Prefer female voices in order of preference
+    const preferredVoices = [
+      'Microsoft Zira - English (United States)',
+      'Google UK English Female',
+      'Microsoft Hazel - English (Great Britain)',
+      'Samsung Serena',
+      'Samantha',
+      'Victoria',
+      'Karen',
+      'Moira',
+      'Alex'
+    ];
+    
+    // First try to find a specifically named female voice
+    for (const preferredName of preferredVoices) {
+      const voice = voices.find(v => v.name.includes(preferredName.split(' ')[1]) || v.name === preferredName);
+      if (voice) return voice;
+    }
+    
+    // Fallback: find any voice with "female" in the name
+    const femaleVoice = voices.find(voice => 
+      voice.name.toLowerCase().includes('female') ||
+      voice.name.toLowerCase().includes('woman') ||
+      voice.name.toLowerCase().includes('zira') ||
+      voice.name.toLowerCase().includes('hazel') ||
+      voice.name.toLowerCase().includes('samantha') ||
+      voice.name.toLowerCase().includes('karen') ||
+      voice.name.toLowerCase().includes('moira')
+    );
+    
+    if (femaleVoice) return femaleVoice;
+    
+    // Final fallback: use the first available voice
+    return voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+  }, []);
+
+  const speakMessage = useCallback((text, autoSpeak = false) => {
+    if (!voiceEnabled && !autoSpeak) return;
+    
+    if ('speechSynthesis' in window) {
+      // Stop any current speech
+      window.speechSynthesis.cancel();
+      
+      setIsSpeaking(true);
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Configure for attractive female voice
+      const femaleVoice = getFemalVoice();
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      }
+      
+      // Voice settings for attractive female speech
+      utterance.rate = 0.85; // Slightly slower for clarity
+      utterance.pitch = 1.1; // Slightly higher pitch for femininity
+      utterance.volume = 0.9; // Clear but not too loud
+      
+      utterance.onend = () => {
+        setIsSpeaking(false);
+      };
+      
+      utterance.onerror = () => {
+        setIsSpeaking(false);
+      };
+      
+      // Small delay to ensure voice is loaded
+      setTimeout(() => {
+        window.speechSynthesis.speak(utterance);
+      }, 100);
+    }
+  }, [voiceEnabled, getFemalVoice, setIsSpeaking]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -24,6 +102,16 @@ const ChatBox = ({ isOpen, onClose }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Auto-speak welcome message when chat opens
+  useEffect(() => {
+    if (isOpen && messages.length === 1) {
+      // Delay to ensure voices are loaded and chat is fully opened
+      setTimeout(() => {
+        speakMessage(messages[0].text, true);
+      }, 1000);
+    }
+  }, [isOpen, messages, speakMessage]);
 
   useEffect(() => {
     // Initialize speech recognition
@@ -81,6 +169,11 @@ const ChatBox = ({ isOpen, onClose }) => {
       };
       setMessages(prev => [...prev, botMessage]);
       setIsTyping(false);
+      
+      // Automatically speak the bot response with female voice
+      setTimeout(() => {
+        speakMessage(botResponse, true);
+      }, 300); // Small delay to ensure message is rendered
     }, 1500);
   };
 
@@ -109,15 +202,6 @@ const ChatBox = ({ isOpen, onClose }) => {
     }
   };
 
-  const speakMessage = (text) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.8;
-      utterance.pitch = 1;
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -137,18 +221,39 @@ const ChatBox = ({ isOpen, onClose }) => {
               🤖
             </div>
             <div>
-              <h3 className="font-semibold text-white">NaviQ Assistant</h3>
+              <div className="flex items-center space-x-2">
+                <h3 className="font-semibold text-white">NaviQ Assistant</h3>
+                {isSpeaking && (
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-green-400">Speaking...</span>
+                  </div>
+                )}
+              </div>
               <p className="text-xs text-gray-400">
-                {isConnected ? 'Online' : 'Connecting...'}
+                {isConnected ? 'Online • Female Voice AI' : 'Connecting...'}
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
-          >
-            ×
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setVoiceEnabled(!voiceEnabled)}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                voiceEnabled 
+                  ? 'bg-green-500/20 text-green-400' 
+                  : 'bg-white/10 text-gray-400'
+              }`}
+              title={voiceEnabled ? 'Voice enabled' : 'Voice disabled'}
+            >
+              <HiSpeakerWave className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Messages */}
