@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": {
+      "/rurl": {
         target: "http://localhost:5000", // your backend URL
         changeOrigin: true,
         secure: false,
