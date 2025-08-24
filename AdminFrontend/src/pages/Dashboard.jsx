@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useContext } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import AuthContext from "../context/AuthContext"
@@ -22,7 +20,7 @@ const Dashboard = () => {
 console.log(orgData)
   const fetchOrgProfile = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/org/orgProfile", {
+      const response = await fetch("/rurl/api/org/orgProfile", {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
         },
