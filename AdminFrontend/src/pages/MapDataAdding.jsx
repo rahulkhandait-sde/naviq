@@ -72,7 +72,7 @@ const MapInterface = () => {
   const fetchMapData = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`http://localhost:3000/api/maps/${user.$id}`, {
+      const response = await fetch(`/rurl/api/maps/${user.$id}`, {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
           "Content-Type": "application/json",
@@ -127,7 +127,7 @@ const MapInterface = () => {
 
   const createMap = async (imageUrl, width, height) => {
     try {
-      const response = await fetch("http://localhost:3000/api/maps", {
+      const response = await fetch("/rurl/api/maps", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${jwtToken}`,
@@ -201,7 +201,7 @@ const MapInterface = () => {
       const parentType = selectedFloor ? "floor" : "map"
       const parentId = selectedFloor ? selectedFloor._id : user.$id
 
-      const response = await fetch("http://localhost:3000/api/maps/node", {
+      const response = await fetch("/rurl/api/maps/node", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${jwtToken}`,
@@ -238,7 +238,7 @@ const MapInterface = () => {
 
       const isCrossLevelEdge = (isFromFloorNode && isToMapNode) || (isFromMapNode && isToFloorNode)
 
-      const response = await fetch("http://localhost:3000/api/maps/edge", {
+      const response = await fetch("/rurl/api/maps/edge", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${jwtToken}`,
@@ -267,7 +267,7 @@ const MapInterface = () => {
 
   const createBuilding = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/maps/building", {
+      const response = await fetch("/rurl/api/maps/building", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${jwtToken}`,
@@ -365,7 +365,7 @@ const MapInterface = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/api/maps/floor", {
+      const response = await fetch("/rurl/api/maps/floor", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${jwtToken}`,
@@ -397,7 +397,7 @@ const MapInterface = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/api/maps/floor/${floorId}`, {
+      const response = await fetch(`/rurl/api/maps/floor/${floorId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${jwtToken}`,
@@ -428,7 +428,7 @@ const MapInterface = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/api/maps/node/${nodeId}`, {
+      const response = await fetch(`/rurl/api/maps/node/${nodeId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${jwtToken}`,
@@ -456,7 +456,7 @@ const MapInterface = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/api/maps/edge/${edgeId}`, {
+      const response = await fetch(`/rurl/api/maps/edge/${edgeId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${jwtToken}`,

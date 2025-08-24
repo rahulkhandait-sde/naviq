@@ -25,7 +25,7 @@ function Paybutton() {
     }
 
     // send details in POST body
-    let res = await axios.post("http://localhost:3000/api/payment", {
+    let res = await axios.post("/rurl/api/payment", {
       amount: 10000,
       customerId: user.$id,
       customerPhone: "+917585814061",
@@ -52,7 +52,7 @@ function Paybutton() {
   const verifyPayment = async (orderIdToVerify, customerId) => {
   try {
     console.log("verifying payment for order id:", orderIdToVerify);
-    let res = await axios.post("http://localhost:3000/api/verify", {
+    let res = await axios.post("/rurl/api/verify", {
       orderId: orderIdToVerify,
       customerId: customerId, // ✅ send customerId also
     });
