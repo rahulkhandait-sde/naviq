@@ -15,6 +15,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@io-orkes/conductor-javascript": "^2.1.4",
+    "axios": "^1.11.0",
     "cashfree-pg": "^5.0.8",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",

@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useContext } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import AuthContext from "../context/AuthContext"
@@ -7,15 +9,17 @@ const Dashboard = () => {
   const [orgData, setOrgData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const navigate = useNavigate();
+  const [uploadStatus, setUploadStatus] = useState("")
+  const [selectedFile, setSelectedFile] = useState(null)
+  const navigate = useNavigate()
   const { jwtToken, logout } = useContext(AuthContext)
-  if(!localStorage.getItem('user')){
-    navigate('/')
+  if (!localStorage.getItem("user")) {
+    navigate("/")
   }
   useEffect(() => {
     fetchOrgProfile()
   }, [jwtToken])
-
+console.log(orgData)
   const fetchOrgProfile = async () => {
     try {
       const response = await fetch("http://localhost:3000/api/org/orgProfile", {
@@ -25,7 +29,7 @@ const Dashboard = () => {
       })
       const data = await response.json()
       setOrgData(data)
-      console.log(orgData);
+      console.log(orgData)
     } catch (error) {
       console.error("Error fetching org profile:", error)
     } finally {
@@ -34,9 +38,44 @@ const Dashboard = () => {
   }
 
   const handleLogout = () => {
-    // Logout logic will be implemented
     logout()
-    navigate('/')
+    navigate("/")
+  }
+
+  const uploadFile = async () => {
+    if (!orgData?.appwriteId) {
+      setUploadStatus("Organization ID not available!")
+      return
+    }
+    if (!selectedFile) {
+      setUploadStatus("Please select a file first!")
+      return
+    }
+
+    const formData = new FormData()
+    formData.append("file", selectedFile)
+    formData.append("organization_id", orgData.appwriteId)
+
+    setUploadStatus("Uploading...")
+
+    try {
+      const res = await fetch("https://subhajit01-naviqrag.hf.space/upload", {
+        method: "POST",
+        body: formData,
+      })
+      const data = await res.json()
+      setUploadStatus(data.message || "Upload done!")
+      setSelectedFile(null)
+      const fileInput = document.getElementById("fileInput")
+      if (fileInput) fileInput.value = ""
+    } catch (error) {
+      setUploadStatus("Upload failed: " + error.message)
+    }
+  }
+
+  const handleFileChange = (e) => {
+    setSelectedFile(e.target.files[0])
+    setUploadStatus("")
   }
 
   if (loading) {
@@ -49,7 +88,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-blue-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-float"></div>
         <div
@@ -62,7 +100,6 @@ const Dashboard = () => {
         ></div>
       </div>
 
-      {/* Floating Particles */}
       <div className="absolute inset-0">
         {[...Array(20)].map((_, i) => (
           <div
@@ -79,12 +116,10 @@ const Dashboard = () => {
       </div>
 
       <div className="relative z-10 flex">
-        {/* Sidebar */}
         <div
           className={`fixed inset-y-0 left-0 z-50 w-80 bg-black/30 backdrop-blur-xl border-r border-gray-700/50 transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}
         >
           <div className="flex flex-col h-full">
-            {/* Logo/Header */}
             <div className="flex items-center justify-between h-16 px-6 border-b border-gray-700/50">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
                 NaviQ
@@ -99,7 +134,6 @@ const Dashboard = () => {
               </button>
             </div>
 
-            {/* Profile Section */}
             <div className="p-6 border-b border-gray-700/50">
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
@@ -113,7 +147,6 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Subscription Info */}
             <div className="p-6 border-b border-gray-700/50">
               <h4 className="text-white font-semibold mb-3">Subscription Details</h4>
               <div className="space-y-2">
@@ -132,7 +165,6 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Navigation */}
             <div className="flex-1 p-6">
               <nav className="space-y-4">
                 <Link
@@ -174,7 +206,6 @@ const Dashboard = () => {
               </nav>
             </div>
 
-            {/* Logout Button */}
             <div className="p-6 border-t border-gray-700/50">
               <button
                 onClick={handleLogout}
@@ -199,9 +230,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="flex-1 lg:ml-0">
-          {/* Top Bar */}
           <div className="bg-black/20 backdrop-blur-xl border-b border-gray-700/50 px-6 py-4">
             <div className="flex items-center justify-between">
               <button
@@ -225,9 +254,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Dashboard Content */}
           <div className="p-6">
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <div className="bg-black/30 backdrop-blur-xl border border-gray-700/50 rounded-xl p-6 hover:bg-black/40 transition-all duration-300 group">
                 <div className="flex items-center justify-between">
@@ -241,7 +268,7 @@ const Dashboard = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
                       />
                     </svg>
                   </div>
@@ -306,8 +333,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="bg-black/30 backdrop-blur-xl border border-gray-700/50 rounded-xl p-6">
+            <div className="bg-black/30 backdrop-blur-xl border border-gray-700/50 rounded-xl p-6 mb-8">
               <h3 className="text-xl font-bold text-white mb-6">Quick Actions</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Link
@@ -346,6 +372,44 @@ const Dashboard = () => {
                     <p className="text-gray-400 text-sm">Purchase additional credits for your account</p>
                   </div>
                 </button>
+              </div>
+            </div>
+
+            <div className="bg-black/30 backdrop-blur-xl border border-gray-700/50 rounded-xl p-6">
+              <h3 className="text-xl font-bold text-white mb-6">Upload Document</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-gray-400 text-sm mb-2">Select File (PDF or Image)</label>
+                  <input
+                    id="fileInput"
+                    type="file"
+                    accept="image/*, application/pdf"
+                    onChange={handleFileChange}
+                    className="w-full p-3 bg-black/50 border border-gray-600/50 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-all duration-300"
+                  />
+                </div>
+
+                <button
+                  onClick={uploadFile}
+                  disabled={!selectedFile}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 disabled:cursor-not-allowed"
+                >
+                  Upload Document
+                </button>
+
+                {uploadStatus && (
+                  <div
+                    className={`p-3 rounded-lg text-sm ${
+                      uploadStatus.includes("done") || uploadStatus.includes("success")
+                        ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                        : uploadStatus.includes("failed") || uploadStatus.includes("error")
+                          ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                          : "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                    }`}
+                  >
+                    {uploadStatus}
+                  </div>
+                )}
               </div>
             </div>
           </div>
