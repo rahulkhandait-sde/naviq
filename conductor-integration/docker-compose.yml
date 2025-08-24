@@ -1,0 +1,69 @@
+version: "3.8"
+services:
+  # Conductor Server
+  conductor-server:
+    image: conductoross/conductor:3.21.18
+    environment:
+      - DB_TYPE=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ES_HOST=elasticsearch
+      - ES_PORT=9200
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+      - elasticsearch
+    networks:
+      - conductor-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Conductor UI
+  conductor-ui:
+    image: conductoross/conductor-ui:3.21.18
+    environment:
+      - WF_SERVER=http://conductor-server:8080
+    ports:
+      - "5000:5000"
+    depends_on:
+      - conductor-server
+    networks:
+      - conductor-network
+
+  # Redis for Conductor persistence
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - conductor-network
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+
+  # Elasticsearch for indexing and search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.15
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - conductor-network
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+networks:
+  conductor-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  es-data:

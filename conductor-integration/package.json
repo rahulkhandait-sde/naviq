@@ -1,0 +1,38 @@
+{
+	"name": "naviq-conductor-integration",
+	"version": "1.0.0",
+	"description": "Orkes Conductor integration for NaviQ navigation platform",
+	"main": "integration/conductor.service.js",
+	"type": "module",
+	"scripts": {
+		"start": "node integration/conductor.service.js",
+		"dev": "nodemon integration/conductor.service.js",
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"conductor:start": "docker-compose up -d",
+		"conductor:stop": "docker-compose down",
+		"conductor:logs": "docker-compose logs -f",
+		"workflows:register": "node scripts/register-workflows.js",
+		"workers:start": "node workers/start-workers.js"
+	},
+	"keywords": [
+		"conductor",
+		"workflow",
+		"orchestration",
+		"navigation",
+		"naviq",
+		"hackathon"
+	],
+	"author": "NaviQ Team",
+	"license": "MIT",
+	"dependencies": {
+		"@io-orkes/conductor-javascript": "^2.1.4",
+		"express": "^5.1.0",
+		"cors": "^2.8.5",
+		"dotenv": "^17.2.1",
+		"mongoose": "^8.17.1",
+		"axios": "^1.6.0"
+	},
+	"devDependencies": {
+		"nodemon": "^3.0.0"
+	}
+}
