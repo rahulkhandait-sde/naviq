@@ -1,7 +1,7 @@
-import { ConductorWorker, orkesConductorClient } from '@io-orkes/conductor-javascript';
+import { TaskRunner, orkesConductorClient } from '@io-orkes/conductor-javascript';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: '.env.local' });
 
 // Conductor configuration
 export const conductorConfig = {
@@ -25,15 +25,27 @@ export const workerConfig = {
   domain: 'naviq'
 };
 
-// Create worker instance
-export const worker = new ConductorWorker({
-  ...workerConfig,
-  serverUrl: conductorConfig.serverUrl
-});
+// Create task runner instance (will be initialized later)
+export let taskRunner = null;
+
+// Function to initialize task runner
+export function initializeTaskRunner() {
+  taskRunner = new TaskRunner({
+    serverUrl: conductorConfig.serverUrl,
+    keyId: conductorConfig.keyId,
+    keySecret: conductorConfig.keySecret,
+    options: {
+      pollingIntervalMs: workerConfig.pollingIntervalMS,
+      concurrency: workerConfig.concurrency
+    }
+  });
+  return taskRunner;
+}
 
 export default {
   conductorConfig,
   conductorClient,
-  worker,
-  workerConfig
+  taskRunner,
+  workerConfig,
+  initializeTaskRunner
 };

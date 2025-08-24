@@ -1,5 +1,5 @@
 // Navigation Workers for NaviQ Conductor Integration
-import { worker } from '../config/conductor.config.js';
+import { taskRunner } from '../config/conductor.config.js';
 
 // Import existing NaviQ functions
 // Note: These imports should point to your actual backend controllers
@@ -333,12 +333,12 @@ function calculateEstimatedTime(distance) {
 
 // Register all workers
 export function registerNavigationWorkers() {
-  worker.registerWorker(validateUserQueryWorker);
-  worker.registerWorker(classifyQueryTypeWorker);
-  worker.registerWorker(extractLocationsWorker);
-  worker.registerWorker(calculateOptimalPathWorker);
-  worker.registerWorker(generateDirectionsWorker);
-  worker.registerWorker(formatResponseWorker);
+  taskRunner.registerTask('validate_user_query', validateUserQueryWorker.execute);
+  taskRunner.registerTask('classify_query_type', classifyQueryTypeWorker.execute);
+  taskRunner.registerTask('extract_locations', extractLocationsWorker.execute);
+  taskRunner.registerTask('calculate_optimal_path', calculateOptimalPathWorker.execute);
+  taskRunner.registerTask('generate_directions', generateDirectionsWorker.execute);
+  taskRunner.registerTask('format_response', formatResponseWorker.execute);
   
   console.log('✅ Navigation workers registered successfully');
 }

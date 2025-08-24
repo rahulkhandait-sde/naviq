@@ -6,6 +6,8 @@ import { router as paymentRoutes } from './routes/payment.routes.js';
 import { router as generalOrgRoutes } from './routes/generalOrg.routes.js';
 import {router as mapRoutes} from './routes/map.routes.js';
 import {router as botroutes} from './routes/accessbot.routes.js'
+// Import Conductor integration
+import { router as conductorRoutes } from '../conductor-integration/integration/workflow.routes.js';
 import dotenv from 'dotenv';
 import cors from 'cors';
 
@@ -22,8 +24,11 @@ app.use('/api',paymentRoutes);
 app.use('/api',generalOrgRoutes);
 app.use('/api/maps',mapRoutes );
 app.use('/api/bot',botroutes);
+// Add Conductor routes for enterprise workflow orchestration
+app.use('/api/conductor', conductorRoutes);
+
 app.get('/', (req, res) => {
-  res.send('Hello DADA!');
+  res.send('🚀 NaviQ with Enterprise Workflow Orchestration - Ready for Demo!');
 })
 app.get("/protected", verifySession, (req, res) => {
   res.json({ message: "Hello, " + req.user.name });
