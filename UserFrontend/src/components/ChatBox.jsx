@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { HiPaperAirplane, HiMicrophone, HiSpeakerWave, HiXMark } from "react-icons/hi2"
+import CompassDisk from "./CompassDisk"
 
 const IntegratedChat = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState([
@@ -103,7 +104,10 @@ const IntegratedChat = ({ isOpen, onClose }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userquery: currentQuery }),
+        body: JSON.stringify({
+          userquery: currentQuery,
+          organization_id: orgId,
+        }),
       })
 
       if (!response.ok) {
@@ -123,11 +127,24 @@ const IntegratedChat = ({ isOpen, onClose }) => {
         }
       }
 
+      let botMessageText = "I received your request and I'm processing it."
+      let isNavigationResponse = false
+
+      // Prioritize promptresult for navigation instructions
+      if (data.promptresult) {
+        botMessageText = data.promptresult
+        isNavigationResponse = true
+      } else if (data.reply || data.response || data.message) {
+        botMessageText = data.reply || data.response || data.message
+      }
+
       const botMessage = {
         id: Date.now() + 1,
-        text: data.reply || data.response || data.message || "I received your request and I'm processing it.",
+        text: botMessageText,
         sender: "bot",
         timestamp: new Date(),
+        isNavigation: isNavigationResponse,
+        hasPromptResult: !!data.promptresult,
       }
 
       setMessages((prev) => [...prev, botMessage])
@@ -188,26 +205,6 @@ const IntegratedChat = ({ isOpen, onClose }) => {
     )
   }
 
-  const isSingleBuildingPath = (pathResponse) => {
-    if (!pathResponse || !pathResponse.source || !pathResponse.destination) return false
-
-    const sourceLocation = pathResponse.source.location
-    const destLocation = pathResponse.destination.location
-
-    return (
-      sourceLocation === "building" &&
-      destLocation === "building" &&
-      pathResponse.source.building === pathResponse.destination.building
-    )
-  }
-
-  const getSingleMapType = (pathResponse) => {
-    if (isSingleBuildingPath(pathResponse)) {
-      return "building"
-    }
-    return "main"
-  }
-
   const fetchMapData = async (orgId) => {
     try {
       const mapResponse = await fetch(`http://localhost:3000/api/maps/${orgId}`)
@@ -235,47 +232,11 @@ const IntegratedChat = ({ isOpen, onClose }) => {
       }
       relevantNodes = mapInfo.nodes || []
     } else {
-      let targetBuilding, targetFloor
+      // Building floor map
+      const building = mapInfo.buildings?.find((b) => b.name === pathResponse.destination.building)
+      const floor = building?.floors?.find((f) => f.floorNumber === pathResponse.destination.floor)
 
-      if (isSingleBuildingPath(pathResponse)) {
-        // For single building paths, use the building that contains both points
-        targetBuilding = pathResponse.source?.building || pathResponse.destination?.building
-        targetFloor = pathResponse.source?.floor || pathResponse.destination?.floor
-      } else {
-        // For dual map paths, determine which building to show based on active tab or path data
-        if (activeMapTab === "building" || mapType === "building") {
-          // Show the building that contains the building-located point
-          if (pathResponse.destination?.location === "building") {
-            targetBuilding = pathResponse.destination.building
-            targetFloor = pathResponse.destination.floor
-          } else if (pathResponse.source?.location === "building") {
-            targetBuilding = pathResponse.source.building
-            targetFloor = pathResponse.source.floor
-          }
-        }
-      }
-
-      console.log(`[v0] Looking for building: ${targetBuilding}, floor: ${targetFloor}`)
-
-      const building = mapInfo.buildings?.find((b) => b.name === targetBuilding)
-      if (!building) {
-        console.log(`[v0] Building not found: ${targetBuilding}`)
-        console.log(
-          `[v0] Available buildings:`,
-          mapInfo.buildings?.map((b) => b.name),
-        )
-        return null
-      }
-
-      const floor = building.floors?.find((f) => f.floorNumber === targetFloor)
-      if (!floor) {
-        console.log(`[v0] Floor not found for building: ${targetBuilding}, floor: ${targetFloor}`)
-        console.log(
-          `[v0] Available floors:`,
-          building.floors?.map((f) => f.floorNumber),
-        )
-        return null
-      }
+      if (!floor) return null
 
       currentMapData = {
         mapImage: floor.mapImage,
@@ -283,21 +244,12 @@ const IntegratedChat = ({ isOpen, onClose }) => {
         height: floor.height,
       }
       relevantNodes = floor.nodes || []
-
-      console.log(`[v0] Using building floor data:`, {
-        building: targetBuilding,
-        floor: targetFloor,
-        floorWidth: floor.width,
-        floorHeight: floor.height,
-        nodes: relevantNodes.length,
-        mapImage: floor.mapImage ? "present" : "missing",
-      })
     }
 
     const { mapImage, width, height } = currentMapData
     const { source, destination, result } = pathResponse
 
-    console.log(`[v0] Rendering ${mapType} map with dimensions:`, { width, height, mapType })
+    console.log(`[v0] Rendering ${mapType} map with data:`, { currentMapData, pathResponse })
 
     const maxWidth = Math.min(window.innerWidth - 16, window.innerWidth < 640 ? window.innerWidth - 32 : 800)
     const maxHeight = Math.min(window.innerHeight * (window.innerWidth < 640 ? 0.4 : 0.6), 600)
@@ -316,45 +268,13 @@ const IntegratedChat = ({ isOpen, onClose }) => {
     const scaleX = displayWidth / width
     const scaleY = displayHeight / height
 
-    console.log(`[v0] Scaling factors:`, {
-      scaleX,
-      scaleY,
-      displayWidth,
-      displayHeight,
-      originalWidth: width,
-      originalHeight: height,
-    })
-
     const shouldShowSource =
       mapType === "main"
         ? source?.location === "main_map"
-        : source?.location === "building" &&
-          source?.building === pathResponse.source?.building &&
-          source?.floor === pathResponse.source?.floor
+        : source?.location === "building" && source?.building === pathResponse.destination?.building
 
     const shouldShowDestination =
-      mapType === "main"
-        ? destination?.location === "main_map"
-        : destination?.location === "building" &&
-          destination?.building === pathResponse.destination?.building &&
-          destination?.floor === pathResponse.destination?.floor
-
-    console.log(`[v0] Point visibility:`, { mapType, shouldShowSource, shouldShowDestination })
-
-    if (shouldShowSource && source) {
-      console.log(`[v0] Source coordinates:`, {
-        x: source.x,
-        y: source.y,
-        scaled: { x: source.x * scaleX, y: source.y * scaleY },
-      })
-    }
-    if (shouldShowDestination && destination) {
-      console.log(`[v0] Destination coordinates:`, {
-        x: destination.x,
-        y: destination.y,
-        scaled: { x: destination.x * scaleX, y: destination.y * scaleY },
-      })
-    }
+      mapType === "main" ? destination?.location === "main_map" : destination?.location === "building"
 
     return (
       <div className="relative mx-auto" style={{ width: displayWidth, height: displayHeight }}>
@@ -365,12 +285,12 @@ const IntegratedChat = ({ isOpen, onClose }) => {
           style={{ width: displayWidth, height: displayHeight }}
         />
 
-        {shouldShowSource && source && source.x !== undefined && source.y !== undefined && (
+        {shouldShowSource && source && (
           <div
             className="absolute w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full border-2 sm:border-3 border-white shadow-xl transform -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center"
             style={{
-              left: `${source.x * scaleX}px`,
-              top: `${source.y * scaleY}px`,
+              left: `${(source.x || 0) * scaleX}px`,
+              top: `${(source.y || 0) * scaleY}px`,
             }}
             title={`Source: ${source.name || "Start"}`}
           >
@@ -381,12 +301,12 @@ const IntegratedChat = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        {shouldShowDestination && destination && destination.x !== undefined && destination.y !== undefined && (
+        {shouldShowDestination && destination && (
           <div
             className="absolute w-6 h-6 sm:w-8 sm:h-8 bg-red-500 rounded-full border-2 sm:border-3 border-white shadow-xl transform -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center"
             style={{
-              left: `${destination.x * scaleX}px`,
-              top: `${destination.y * scaleY}px`,
+              left: `${(destination.x || 0) * scaleX}px`,
+              top: `${(destination.y || 0) * scaleY}px`,
             }}
             title={`Destination: ${destination.name || "End"}`}
           >
@@ -416,13 +336,6 @@ const IntegratedChat = ({ isOpen, onClose }) => {
               if (!sourceNode && index === 0 && shouldShowSource) sourceNode = source
               if (!destNode && index === result.length - 1 && shouldShowDestination) destNode = destination
 
-              console.log(`[v0] Path segment ${index}:`, {
-                sourceNodeName,
-                destNodeName,
-                sourceNode: sourceNode ? { name: sourceNode.name, x: sourceNode.x, y: sourceNode.y } : null,
-                destNode: destNode ? { name: destNode.name, x: destNode.x, y: destNode.y } : null,
-              })
-
               if (
                 sourceNode &&
                 destNode &&
@@ -431,20 +344,13 @@ const IntegratedChat = ({ isOpen, onClose }) => {
                 destNode.x !== undefined &&
                 destNode.y !== undefined
               ) {
-                const x1 = sourceNode.x * scaleX
-                const y1 = sourceNode.y * scaleY
-                const x2 = destNode.x * scaleX
-                const y2 = destNode.y * scaleY
-
-                console.log(`[v0] Drawing line from (${x1}, ${y1}) to (${x2}, ${y2})`)
-
                 return (
                   <line
                     key={index}
-                    x1={x1}
-                    y1={y1}
-                    x2={x2}
-                    y2={y2}
+                    x1={sourceNode.x * scaleX}
+                    y1={sourceNode.y * scaleY}
+                    x2={destNode.x * scaleX}
+                    y2={destNode.y * scaleY}
                     stroke="#3b82f6"
                     strokeWidth="3"
                     strokeDasharray="6,3"
@@ -463,13 +369,31 @@ const IntegratedChat = ({ isOpen, onClose }) => {
     )
   }
 
+  const formatNavigationText = (text) => {
+    // Split by numbered steps and format them
+    const steps = text.split(/(\d+\.\s+)/).filter(Boolean)
+    const formattedSteps = []
+
+    for (let i = 0; i < steps.length; i += 2) {
+      if (steps[i].match(/^\d+\.\s+/) && steps[i + 1]) {
+        formattedSteps.push({
+          number: steps[i].trim(),
+          content: steps[i + 1].trim(),
+        })
+      }
+    }
+
+    return formattedSteps
+  }
+
   if (!isOpen) return null
 
   return (
     <>
       {showMap && mapData && pathData && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-center justify-center p-1 sm:p-4">
-          <div className="bg-slate-900 rounded-lg sm:rounded-2xl border border-slate-700 w-full h-full sm:max-w-7xl sm:max-h-[95vh] overflow-hidden flex flex-col">
+          <CompassDisk isFullScreen={true} className="opacity-20" />
+          <div className="bg-slate-900/80 backdrop-blur-md rounded-lg sm:rounded-2xl border border-slate-700 w-full h-full sm:max-w-7xl sm:max-h-[95vh] overflow-hidden flex flex-col relative z-10">
             <div className="p-2 sm:p-4 border-b border-slate-700 flex items-center justify-between flex-shrink-0">
               <div>
                 <h3 className="text-base sm:text-xl font-semibold text-white">Navigation Route</h3>
@@ -516,7 +440,7 @@ const IntegratedChat = ({ isOpen, onClose }) => {
                     {activeMapTab === "building" && renderPathOnMap(mapData, pathData, "building")}
                   </>
                 ) : (
-                  renderPathOnMap(mapData, pathData, getSingleMapType(pathData))
+                  renderPathOnMap(mapData, pathData, "main")
                 )}
               </div>
 
@@ -549,7 +473,8 @@ const IntegratedChat = ({ isOpen, onClose }) => {
       )}
 
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center sm:justify-center">
-        <div className="bg-slate-950/95 backdrop-blur-lg border-t border-white/10 sm:border sm:rounded-2xl w-full h-4/5 sm:w-96 sm:h-3/4 flex flex-col">
+        <CompassDisk isFullScreen={true} className="opacity-10" />
+        <div className="bg-slate-950/95 backdrop-blur-lg border-t border-white/10 sm:border sm:rounded-2xl w-full h-4/5 sm:w-96 sm:h-3/4 flex flex-col relative z-10">
           <div className="p-4 border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
@@ -578,7 +503,33 @@ const IntegratedChat = ({ isOpen, onClose }) => {
                       : "bg-slate-800 text-gray-100 rounded-bl-md"
                   }`}
                 >
-                  <p className="text-sm">{message.text}</p>
+                  {message.isNavigation || message.hasPromptResult ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <span className="text-lg">🧭</span>
+                        <p className="text-sm font-semibold text-blue-300">Step-by-Step Navigation:</p>
+                      </div>
+                      {formatNavigationText(message.text).length > 0 ? (
+                        formatNavigationText(message.text).map((step, index) => (
+                          <div key={index} className="flex items-start space-x-3 p-2 bg-slate-700/50 rounded-lg">
+                            <span className="inline-flex items-center justify-center w-7 h-7 bg-blue-600 text-white text-sm font-bold rounded-full flex-shrink-0 mt-0.5">
+                              {index + 1}
+                            </span>
+                            <div className="flex-1">
+                              <p className="text-gray-100 leading-relaxed text-sm">{step.content}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-3 bg-slate-700/50 rounded-lg">
+                          <p className="text-gray-100 leading-relaxed text-sm whitespace-pre-line">{message.text}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm">{message.text}</p>
+                  )}
+
                   {message.sender === "bot" && (
                     <button
                       onClick={() => speakMessage(message.text)}
@@ -591,25 +542,6 @@ const IntegratedChat = ({ isOpen, onClose }) => {
                 </div>
               </div>
             ))}
-
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-2xl bg-slate-800 text-gray-100 rounded-bl-md">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"
-                      style={{ animationDelay: "0.2s" }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"
-                      style={{ animationDelay: "0.4s" }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
           </div>
 
           <div className="p-4 border-t border-white/10">
